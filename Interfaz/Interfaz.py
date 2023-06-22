@@ -223,6 +223,7 @@ class AppWindow(ctk.CTk):
         self.label_status.configure(text="¿Qué tipo de tareas desea ver?\nfamiliar, social, educativo o todos")
 
     def ver_tareas(self, tipo):
+        self.destroy_widgets()
         self.comando_ant = ""
         self.label_title.configure(text=f"Tareas: {tipo}")
         self.tareas_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
