@@ -155,7 +155,7 @@ class AppWindow(ctk.CTk):
         self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.label_title.configure(text="Crear Tarea")
         self.comando_ant = "crear tarea "
-        self.label_status.configure(text="¿Qué tipo de tarea desea crear?")
+        self.label_status.configure(text="¿Qué tipo de tarea desea crear?\nfamiliar, social o educativo")
 
     def tipo_tarea(self, tipo):
         self.comando_ant = ""
@@ -220,7 +220,7 @@ class AppWindow(ctk.CTk):
             pass
         self.comando_ant = "ver tareas "
         self.label_title.configure(text="Ver Tareas")
-        self.label_status.configure(text="¿Qué tipo de tareas desea ver?")
+        self.label_status.configure(text="¿Qué tipo de tareas desea ver?\nfamiliar, social, educativo o todos")
 
     def ver_tareas(self, tipo):
         self.comando_ant = ""
