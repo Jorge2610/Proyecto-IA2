@@ -90,11 +90,11 @@ class AppWindow(ctk.CTk):
         self.title_tarea_actual = "visitar a la abuela"
 
         self.title("Asistente de Tareas")
-        self.geometry("400x400+0+0")
+        self.geometry("400x550+0+0")
         self.resizable(False, False)
         self.update_idletasks()
         width = 400
-        height = 500
+        height = 430
         x = (self.winfo_screenwidth() - width) // 2
         y = (self.winfo_screenheight() - height) // 2
         self.geometry(f"{width}x{height}+{x+150}+{y}")
@@ -132,10 +132,10 @@ class AppWindow(ctk.CTk):
 
         
 
-        self.caja_texto = ctk.CTkEntry(self.microfono_frame, width=100, height=10)
-        self.caja_texto.pack(pady=(10, 0))
-        self.enter_button = ctk.CTkButton(self.microfono_frame, text="Enter", command=self.enter)
-        self.enter_button.pack(pady=(10, 0))
+        # self.caja_texto = ctk.CTkEntry(self.microfono_frame, width=100, height=10)
+        # self.caja_texto.pack(pady=(10, 0))
+        # self.enter_button = ctk.CTkButton(self.microfono_frame, text="Enter", command=self.enter)
+        # self.enter_button.pack(pady=(10, 0))
         
         self.label_prediccion = ctk.CTkLabel(self.microfono_frame, text="Prediccion: ", font=ctk.CTkFont(size=15, weight="bold"))
         self.label_prediccion.pack(pady=(10, 0))
@@ -197,6 +197,7 @@ class AppWindow(ctk.CTk):
         self.actuar()
 
     def actuar(self):
+        # comentar esta linea
         self.respuesta = self.predecir()
         if self.respuesta == "crear tarea" or self.respuesta == "ver tareas" or self.respuesta == "cancelar" or self.respuesta == "borrar tarea":
             self.comando_ant = ""
@@ -235,7 +236,7 @@ class AppWindow(ctk.CTk):
     def tipo_tarea(self, tipo):
         self.comando_ant = ""
         self.tipo_tarea_actual = tipo
-        self.label_status.configure(text="Ingrese la tarea")
+        self.label_status.configure(text="Ingrese la tarea\nLuego diga 'guardar tarea'")
         self.caja_titulo = ctk.CTkEntry(self.main_frame, width=200, height=10)
         self.caja_titulo.place(relx=0.5, rely=0.7, anchor=tk.CENTER)
     
@@ -335,7 +336,7 @@ class AppWindow(ctk.CTk):
         except:
             pass
         
-        self.label_status.configure(text=f"Llene los campos y diga CONFIRMAR")
+        self.label_status.configure(text=f"Llene los campos y diga 'confirmar'")
         self.label_status.pack()
         self.codigo_tarea_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
         self.codigo_tarea_frame.pack()
