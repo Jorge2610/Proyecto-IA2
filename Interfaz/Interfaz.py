@@ -71,9 +71,7 @@ def get_predict_feat(path):
     return final_result
 
 def prediccion(path1):
-    print(path1)
     res = get_predict_feat(path1)
-    print(path1)
     predictions = modelo.predict(res)
     y_pred = encoder.inverse_transform(predictions)
     return y_pred[0][0]
@@ -132,11 +130,15 @@ class AppWindow(ctk.CTk):
         self.button_microfono = tk.Button(self.microfono_frame, image=self.imagen_tk, command=self.escuchar, width=60, height=60)
         self.button_microfono.pack(pady=(20, 0))
 
+        
+
         self.caja_texto = ctk.CTkEntry(self.microfono_frame, width=100, height=10)
         self.caja_texto.pack(pady=(10, 0))
         self.enter_button = ctk.CTkButton(self.microfono_frame, text="Enter", command=self.enter)
         self.enter_button.pack(pady=(10, 0))
-
+        
+        self.label_prediccion = ctk.CTkLabel(self.microfono_frame, text="Prediccion: ", font=ctk.CTkFont(size=15, weight="bold"))
+        self.label_prediccion.pack(pady=(10, 0))
         self.container.pack(expand=True, fill=tk.BOTH)
 
         self.comando_ant = ""
@@ -171,6 +173,7 @@ class AppWindow(ctk.CTk):
         self.actuar()
 
     def escuchar(self):
+        self.label_prediccion.configure(text="Prediccion: ")
         self.imagen_tk = Image.open("./on_micro.png")
         self.imagen_tk.resize((50, 50))
         self.imagen_tk = ImageTk.PhotoImage(self.imagen_tk)
@@ -199,6 +202,7 @@ class AppWindow(ctk.CTk):
             self.comando_ant = ""
         if f"{self.comando_ant}{self.respuesta}" not in self.comandos:
             self.label_status.configure(text="Comando no reconocido")
+            self.label_prediccion.configure(text=f"Prediccion:")
             def sleep():
                 time.sleep(1)
                 self.label_status.configure(text="Diga un Comando")
@@ -417,7 +421,7 @@ class AppWindow(ctk.CTk):
     def predecir(self):
         path = "./output.wav"
         respuesta = prediccion(path)
-        print(respuesta)
+        self.label_prediccion.configure(text=f"Prediccion: {respuesta}")
         return respuesta.lower()
 
 def App():
