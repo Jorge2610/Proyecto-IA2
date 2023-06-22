@@ -6,6 +6,7 @@ import sounddevice as sd
 from scipy.io.wavfile import write
 import threading as th
 import time
+
 import joblib
 import numpy as np
 import pandas as pd
@@ -15,13 +16,19 @@ import librosa
 from scipy.io.wavfile import write
 import sounddevice as sd
 
-# Carga del modelo.
-modelo = joblib.load('modelo125.pkl')
-# loading our scaler
-scaler = joblib.load('scaler.joblib')
-# loading our encoder
-encoder = joblib.load('encoder.joblib')
-print(encoder.categories_)
+def loadModel():
+    # Carga del modelo.
+    global modelo
+    global scaler
+    global encoder
+    modelo = joblib.load('../modelo125.pkl')
+    # loading our scaler
+    scaler = joblib.load('../scaler.joblib')
+    # loading our encoder
+    encoder = joblib.load('../encoder.joblib')
+    print(encoder.categories_)
+
+HILO = th.Thread(target=loadModel)
 
 # Funciones para extraer caracteristicas del audio
 
@@ -52,6 +59,7 @@ def feat_ext(data, s_rate):
     return result
 
 
+
 def get_predict_feat(path):
     d, s_rate = librosa.load(path, duration=3, offset=0.6)
     res = feat_ext(d, s_rate)
@@ -62,9 +70,10 @@ def get_predict_feat(path):
 
     return final_result
 
-
 def prediccion(path1):
+    print(path1)
     res = get_predict_feat(path1)
+    print(path1)
     predictions = modelo.predict(res)
     y_pred = encoder.inverse_transform(predictions)
     return y_pred[0][0]
@@ -158,6 +167,7 @@ class AppWindow(ctk.CTk):
 
     def enter(self):
         self.respuesta = self.caja_texto.get()
+        self.caja_texto.delete(0, tk.END)
         self.actuar()
 
     def escuchar(self):
@@ -179,7 +189,7 @@ class AppWindow(ctk.CTk):
         self.imagen_tk.resize((50, 50))
         self.imagen_tk = ImageTk.PhotoImage(self.imagen_tk)
         self.button_microfono.configure(image=self.imagen_tk)
-        write("ouput.wav", fs, myrecording)
+        write("output.wav", fs, myrecording)
         print("Grabacion finalizada")
         self.actuar()
 
@@ -405,12 +415,19 @@ class AppWindow(ctk.CTk):
 
 
     def predecir(self):
-        path = "./ouput.wav"
+        path = "./output.wav"
         respuesta = prediccion(path)
-        return respuesta
+        print(respuesta)
+        return respuesta.lower()
 
-
-
-if __name__ == "__main__":
+def App():
     ventana = AppWindow()
     ventana.mainloop()
+
+
+HILOAPP = th.Thread(target=App)
+
+if __name__ == "__main__":
+    HILOAPP.start()
+    HILO.start()
+    

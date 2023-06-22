@@ -8,11 +8,11 @@ from scipy.io.wavfile import write
 import sounddevice as sd
 
 # Carga del modelo.
-modelo = joblib.load('modelo125.pkl')
+modelo = joblib.load('./modelo125.pkl')
 # loading our scaler
-scaler = joblib.load('scaler.joblib')
+scaler = joblib.load('./scaler.joblib')
 # loading our encoder
-encoder = joblib.load('encoder.joblib')
+encoder = joblib.load('./encoder.joblib')
 print(encoder.categories_)
 
 # Funciones para extraer caracteristicas del audio
@@ -70,7 +70,7 @@ while control == 1:
     print("Grabando...")
     myrecording = sd.rec(int(seconds * fs), samplerate=fs, channels=2)
     sd.wait()  # Wait until recording is finished
-    write('E:\Proyectos\Proyecto IA2\Grabaciones\output.wav',
+    write('./output.wav',
           fs, myrecording)  # Save as WAV file
     res = prediccion('Grabaciones/output.wav')
     print(res)
