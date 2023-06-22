@@ -70,15 +70,15 @@ modelo.add(Dense(64, activation='relu'))
 modelo.add(Dense(32, activation='relu'))
 
 modelo.add(Dense(12, activation='softmax'))
-optimizador = Adam(learning_rate=0.005) #Default: 0.001
+optimizador = Adam(learning_rate=0.00045) #Default: 0.001
 modelo.compile(loss='categorical_crossentropy',
                optimizer=optimizador, metrics=['accuracy'],)
 
 # Entrenamos el modelo
-modelo.fit(x_train, y_train, epochs=240, validation_data=(x_test, y_test),batch_size=64,verbose=1)
+modelo.fit(x_train, y_train, epochs=125, validation_data=(x_test, y_test),batch_size=64,verbose=1)
 
 # Guardamos el modelo
-joblib.dump(modelo, 'modelo275.pkl')
+joblib.dump(modelo, 'modelo125.pkl')
 # Guardamos el escalador
 joblib.dump(scaler, 'scaler.joblib')
 # Guardamos el codificador
