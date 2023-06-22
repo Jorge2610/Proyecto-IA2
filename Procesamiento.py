@@ -59,17 +59,12 @@ data, sr = librosa.load(audio)
 
 # Funciones para aplicar distintas tecnicas para generar nuevos audios
 # Cambio de velocidad
-
-
 def stretch(data, rate1):
     return librosa.effects.time_stretch(data, rate=rate1)
 
 # Tono
-
-
 def pitch(data, sampling_rate1, pitch_factor1):
     return librosa.effects.pitch_shift(data, sr=sampling_rate1, n_steps=pitch_factor1)
-
 
 # Funciones para extraer caracteristicas del dataset
 def feat_ext(data):
