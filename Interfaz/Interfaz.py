@@ -1,4 +1,6 @@
 import customtkinter as ctk
+import random
+from predict_thread import predict
 import tkinter as tk
 import os
 from PIL import Image, ImageTk
@@ -31,6 +33,7 @@ def loadModel():
 HILO = th.Thread(target=loadModel)
 
 # Funciones para extraer caracteristicas del audio
+
 
 
 def feat_ext(data, s_rate):
@@ -74,7 +77,8 @@ def prediccion(path1):
     res = get_predict_feat(path1)
     predictions = modelo.predict(res)
     y_pred = encoder.inverse_transform(predictions)
-    return y_pred[0][0]
+    value_pred = y_pred[0][0]
+    return value_pred
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
@@ -421,7 +425,7 @@ class AppWindow(ctk.CTk):
 
     def predecir(self):
         path = "./output.wav"
-        respuesta = prediccion(path)
+        respuesta = predict(prediccion, path)
         self.label_prediccion.configure(text=f"Prediccion: {respuesta}")
         return respuesta.lower()
 
