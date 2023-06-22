@@ -7,6 +7,77 @@ from scipy.io.wavfile import write
 import threading as th
 import time
 
+import joblib
+import numpy as np
+import pandas as pd
+
+import librosa
+
+from scipy.io.wavfile import write
+import sounddevice as sd
+
+def loadModel():
+    # Carga del modelo.
+    global modelo
+    global scaler
+    global encoder
+    modelo = joblib.load('../modelo125.pkl')
+    # loading our scaler
+    scaler = joblib.load('../scaler.joblib')
+    # loading our encoder
+    encoder = joblib.load('../encoder.joblib')
+    print(encoder.categories_)
+
+HILO = th.Thread(target=loadModel)
+
+# Funciones para extraer caracteristicas del audio
+
+
+def feat_ext(data, s_rate):
+    # ZCR
+    result = np.array([])
+    zcr = np.mean(librosa.feature.zero_crossing_rate(y=data).T, axis=0)
+    result=np.hstack((result, zcr)) # stacking horizontally
+
+    # Chroma_stft
+    stft = np.abs(librosa.stft(data))
+    chroma_stft = np.mean(librosa.feature.chroma_stft(S=stft, sr=s_rate).T, axis=0)
+    result = np.hstack((result, chroma_stft)) # stacking horizontally
+
+    # MFCC
+    mfcc = np.mean(librosa.feature.mfcc(y=data, sr=s_rate).T, axis=0)
+    result = np.hstack((result, mfcc)) # stacking horizontally
+
+    # Root Mean Square Value
+    rms = np.mean(librosa.feature.rms(y=data).T, axis=0)
+    result = np.hstack((result, rms)) # stacking horizontally
+
+    # MelSpectogram
+    mel = np.mean(librosa.feature.melspectrogram(y=data, sr=s_rate).T, axis=0)
+    result = np.hstack((result, mel)) # stacking horizontally
+    
+    return result
+
+
+
+def get_predict_feat(path):
+    d, s_rate = librosa.load(path, duration=3, offset=0.6)
+    res = feat_ext(d, s_rate)
+    result = np.array(res)
+    result = np.reshape(result, newshape=(1, 162))
+    i_result = scaler.transform(result)
+    final_result = np.expand_dims(i_result, axis=2)
+
+    return final_result
+
+def prediccion(path1):
+    print(path1)
+    res = get_predict_feat(path1)
+    print(path1)
+    predictions = modelo.predict(res)
+    y_pred = encoder.inverse_transform(predictions)
+    return y_pred[0][0]
+
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
 
@@ -14,9 +85,8 @@ def hash():
     return os.urandom(2).hex()
 
 class AppWindow(ctk.CTk):
-    def __init__(self, modelo):
+    def __init__(self):
         super().__init__()
-        self.modelo = modelo
 
         self.tipo_tarea_actual = "familiar"
         self.title_tarea_actual = "visitar a la abuela"
@@ -97,6 +167,7 @@ class AppWindow(ctk.CTk):
 
     def enter(self):
         self.respuesta = self.caja_texto.get()
+        self.caja_texto.delete(0, tk.END)
         self.actuar()
 
     def escuchar(self):
@@ -118,12 +189,12 @@ class AppWindow(ctk.CTk):
         self.imagen_tk.resize((50, 50))
         self.imagen_tk = ImageTk.PhotoImage(self.imagen_tk)
         self.button_microfono.configure(image=self.imagen_tk)
-        write("ouput.wav", fs, myrecording)
+        write("output.wav", fs, myrecording)
         print("Grabacion finalizada")
         self.actuar()
 
     def actuar(self):
-        #self.respuesta = self.predecir()
+        self.respuesta = self.predecir()
         if self.respuesta == "crear tarea" or self.respuesta == "ver tareas" or self.respuesta == "cancelar" or self.respuesta == "borrar tarea":
             self.comando_ant = ""
         if f"{self.comando_ant}{self.respuesta}" not in self.comandos:
@@ -223,6 +294,7 @@ class AppWindow(ctk.CTk):
         self.label_status.configure(text="¿Qué tipo de tareas desea ver?\nfamiliar, social, educativo o todos")
 
     def ver_tareas(self, tipo):
+        self.destroy_widgets()
         self.comando_ant = ""
         self.label_title.configure(text=f"Tareas: {tipo}")
         self.tareas_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
@@ -343,15 +415,19 @@ class AppWindow(ctk.CTk):
 
 
     def predecir(self):
-        # ejecutar modelo
-        # path = "./output.wav"
-        # respuesta = self.modelo.predict(path)
-        respuesta = "crear tarea"
-        return respuesta
+        path = "./output.wav"
+        respuesta = prediccion(path)
+        print(respuesta)
+        return respuesta.lower()
+
+def App():
+    ventana = AppWindow()
+    ventana.mainloop()
 
 
+HILOAPP = th.Thread(target=App)
 
 if __name__ == "__main__":
-    modelo = {}
-    ventana = AppWindow(modelo)
-    ventana.mainloop()
+    HILOAPP.start()
+    HILO.start()
+    
