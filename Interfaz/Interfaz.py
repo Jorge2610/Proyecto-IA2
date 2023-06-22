@@ -5,6 +5,7 @@ from PIL import Image, ImageTk
 import sounddevice as sd
 from scipy.io.wavfile import write
 import threading as th
+import time
 
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
@@ -13,8 +14,9 @@ def hash():
     return os.urandom(2).hex()
 
 class AppWindow(ctk.CTk):
-    def __init__(self):
+    def __init__(self, modelo):
         super().__init__()
+        self.modelo = modelo
 
         self.tipo_tarea_actual = "familiar"
         self.title_tarea_actual = "visitar a la abuela"
@@ -69,6 +71,7 @@ class AppWindow(ctk.CTk):
 
         self.comando_ant = ""
         self.respuesta = ""
+        self.accion_tarea = ""
         self.comandos = {
             "crear tarea": self.crear_tarea,
             "ver tareas" : self.ver_tareas_general,
@@ -83,8 +86,13 @@ class AppWindow(ctk.CTk):
             "cancelar" : self.cancelar,
             "guardar tarea" : self.guardar_tarea,
             "reintentar" : self.reintentar,
-            "borrar tarea" : self.ver_tareas_borrar,
+            "borrar tarea" : self.borrar_tarea,
             "confirmar" : self.confirmar,
+            "editar tarea" : self.editar_tarea,
+            "familiar" : 0,
+            "social" : 0,
+            "educativo" : 0,
+            "todos" : 0,
         }
 
     def enter(self):
@@ -116,8 +124,17 @@ class AppWindow(ctk.CTk):
 
     def actuar(self):
         #self.respuesta = self.predecir()
-        if self.respuesta == "crear tarea" or self.respuesta == "ver tareas" or self.respuesta == "cancelar":
+        if self.respuesta == "crear tarea" or self.respuesta == "ver tareas" or self.respuesta == "cancelar" or self.respuesta == "borrar tarea":
             self.comando_ant = ""
+        if f"{self.comando_ant}{self.respuesta}" not in self.comandos:
+            self.label_status.configure(text="Comando no reconocido")
+            def sleep():
+                time.sleep(1)
+                self.label_status.configure(text="Diga un Comando")
+            hilo2 = th.Thread(target=sleep)
+            hilo2.start()
+            self.comando_ant = ""
+            return
         self.comandos[f"{self.comando_ant}{self.respuesta}"]()
     
     def reintentar(self):
@@ -131,18 +148,30 @@ class AppWindow(ctk.CTk):
             self.tareas_frame.destroy()
         except:
             pass
+        try:
+            self.codigo_tarea_frame.destroy()
+        except:
+            pass
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
         self.label_title.configure(text="Crear Tarea")
         self.comando_ant = "crear tarea "
-        self.label_status.configure(text="¿Qué tipo de tarea desea crear?")
+        self.label_status.configure(text="¿Qué tipo de tarea desea crear?\nfamiliar, social o educativo")
 
     def tipo_tarea(self, tipo):
         self.comando_ant = ""
         self.tipo_tarea_actual = tipo
-        self.label_status.configure(text="¿Ingrese la tarea?")
-        self.caja_titulo = ctk.CTkEntry(self.main_frame, width=100, height=10)
+        self.label_status.configure(text="Ingrese la tarea")
+        self.caja_titulo = ctk.CTkEntry(self.main_frame, width=200, height=10)
         self.caja_titulo.place(relx=0.5, rely=0.7, anchor=tk.CENTER)
     
     def cancelar(self):
+        self.destroy_widgets()
+        self.comando_ant = ""
+        self.label_title.configure(text="Home")
+        self.label_status.configure(text="Diga un Comando")
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+    def destroy_widgets(self):
         try:
             self.tareas_frame.destroy()
         except:
@@ -152,13 +181,25 @@ class AppWindow(ctk.CTk):
         except:
             pass
         try:
-           self.codigo_borrar.destroy()
+           self.codigo_tarea.destroy()
         except:
             pass
-        self.comando_ant = ""
-        self.label_title.configure(text="Home")
-        self.label_status.configure(text="Diga un Comando")
-        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        try:
+            self.label_codigo_tarea.destroy()
+        except:
+            pass
+        try:
+            self.codigo_tarea_frame.destroy()
+        except:
+            pass
+        try:
+            self.nuevo_contenido.destroy()
+        except:
+            pass
+        try:
+            self.label_nuevo_contenido.destroy()
+        except:
+            pass
 
     def guardar_tarea(self):
         self.title_tarea_actual = self.caja_titulo.get()
@@ -179,7 +220,7 @@ class AppWindow(ctk.CTk):
             pass
         self.comando_ant = "ver tareas "
         self.label_title.configure(text="Ver Tareas")
-        self.label_status.configure(text="¿Qué tipo de tareas desea ver?")
+        self.label_status.configure(text="¿Qué tipo de tareas desea ver?\nfamiliar, social, educativo o todos")
 
     def ver_tareas(self, tipo):
         self.comando_ant = ""
@@ -208,11 +249,29 @@ class AppWindow(ctk.CTk):
 
         self.tareas_frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
 
-    def ver_tareas_borrar(self):
-        self.label_status.configure(text="Ingrese el codigo para borrar y diga CONFIRMAR")
+    def ver_tareas_con_codigo(self, accion):
+        try:
+           self.tareas_frame.destroy()
+        except:
+            pass
+        try:
+            self.codigo_tarea_frame.destroy()
+        except:
+            pass
+        
+        self.label_status.configure(text=f"Llene los campos y diga CONFIRMAR")
         self.label_status.pack()
-        self.codigo_borrar = ctk.CTkEntry(self.main_frame, width=100, height=10)
-        self.codigo_borrar.pack()
+        self.codigo_tarea_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
+        self.codigo_tarea_frame.pack()
+        self.label_codigo_tarea = ctk.CTkLabel(self.codigo_tarea_frame, text="Codigo: ")
+        self.label_codigo_tarea.grid(row=1, column=0)
+        self.codigo_tarea = ctk.CTkEntry(self.codigo_tarea_frame, width=100, height=10)
+        self.codigo_tarea.grid(row=1, column=1)
+        if accion == "editar":
+           self.label_nuevo_contenido = ctk.CTkLabel(self.codigo_tarea_frame, text="Nuevo Contenido: ")
+           self.label_nuevo_contenido.grid(row=2, column=0)
+           self.nuevo_contenido = ctk.CTkEntry(self.codigo_tarea_frame, width=200, height=10)
+           self.nuevo_contenido.grid(row=2, column=1)
         self.tareas_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
         scrollbar = tk.Scrollbar(self.tareas_frame, orient=tk.VERTICAL)
         self.obj_list = tk.Listbox(self.tareas_frame, yscrollcommand=scrollbar.set)
@@ -230,29 +289,69 @@ class AppWindow(ctk.CTk):
         
         self.tareas_frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
 
+    def borrar_tarea(self):
+        self.accion_tarea = "borrar"
+        self.ver_tareas_con_codigo("borrar")
+
+    def editar_tarea(self):
+        self.accion_tarea = "editar"
+        self.ver_tareas_con_codigo("editar")
+
     def confirmar(self):
-        codigo = self.codigo_borrar.get()
-        self.codigo_borrar.destroy()
+        try:
+            codigo = self.codigo_tarea.get()
+        except:
+            return
         self.comando_ant = ""
+        if self.accion_tarea == "borrar":
+            self.borrar_file_tarea(codigo)
+        elif self.accion_tarea == "editar":
+            new_cont = self.nuevo_contenido.get()
+            if new_cont != "":
+                self.editar_file_tarea(codigo, self.nuevo_contenido.get())
+        self.cancelar()
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+        self.accion_tarea = ""
+
+    def editar_file_tarea(self, codigo, nuevo_cont):
+        if codigo == "":
+            return
+        for tipo in os.listdir(f"./tareas"):
+          for tarea in os.listdir(f"./tareas/{tipo}"):
+            if codigo == tarea[:-4]:
+              tarea_file = open(f"./tareas/{tipo}/{tarea}", "w")
+              tarea_file.write(nuevo_cont)
+              tarea_file.close()
+              print("tarea editada")
+              self.cancelar()
+              return
+        self.cancelar()
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
+    def borrar_file_tarea(self, codigo):
         if codigo == "":
             return
         for tipo in os.listdir(f"./tareas"):
           for tarea in os.listdir(f"./tareas/{tipo}"):
             if codigo == tarea[:-4]:
               os.remove(f"./tareas/{tipo}/{tarea}")
+              print("tarea borrada")
               self.cancelar()
               return
         self.cancelar()
         self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
+
     def predecir(self):
         # ejecutar modelo
-        # path = "output.wav"
+        # path = "./output.wav"
+        # respuesta = self.modelo.predict(path)
         respuesta = "crear tarea"
         return respuesta
 
 
 
 if __name__ == "__main__":
-    ventana = AppWindow()
+    modelo = {}
+    ventana = AppWindow(modelo)
     ventana.mainloop()
