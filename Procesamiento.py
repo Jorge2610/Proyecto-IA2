@@ -59,39 +59,49 @@ data, sr = librosa.load(audio)
 
 # Funciones para aplicar distintas tecnicas para generar nuevos audios
 # Cambio de velocidad
-
-
 def stretch(data, rate1):
     return librosa.effects.time_stretch(data, rate=rate1)
 
 # Tono
-
-
 def pitch(data, sampling_rate1, pitch_factor1):
     return librosa.effects.pitch_shift(data, sr=sampling_rate1, n_steps=pitch_factor1)
 
-
 # Funciones para extraer caracteristicas del dataset
-def feat_ext(data):
-    # ZCR Caracteristicas acusticas de bajo nivel
+def feat_ext(data, sample_rate):
+    # ZCR
     result = np.array([])
     zcr = np.mean(librosa.feature.zero_crossing_rate(y=data).T, axis=0)
-    result = np.hstack((result, zcr))  # Apilamos los datos horizontalmente
-    # MFCC Caracteristicas del dominio de frecuencia
-    mfcc = np.mean(librosa.feature.mfcc(y=data, sr=sr, n_mfcc=40).T, axis=0)
-    result = np.hstack((result, mfcc))  # Apilamos los datos horizontalmente
+    result=np.hstack((result, zcr)) # stacking horizontally
+
+    # Chroma_stft
+    stft = np.abs(librosa.stft(data))
+    chroma_stft = np.mean(librosa.feature.chroma_stft(S=stft, sr=sample_rate).T, axis=0)
+    result = np.hstack((result, chroma_stft)) # stacking horizontally
+
+    # MFCC
+    mfcc = np.mean(librosa.feature.mfcc(y=data, sr=sample_rate).T, axis=0)
+    result = np.hstack((result, mfcc)) # stacking horizontally
+
+    # Root Mean Square Value
+    rms = np.mean(librosa.feature.rms(y=data).T, axis=0)
+    result = np.hstack((result, rms)) # stacking horizontally
+
+    # MelSpectogram
+    mel = np.mean(librosa.feature.melspectrogram(y=data, sr=sample_rate).T, axis=0)
+    result = np.hstack((result, mel)) # stacking horizontally
+    
     return result
 
 
 def get_feat(path):
     data, sample_rate = librosa.load(path, duration=3.0, offset=0.6)
     # Dato normal
-    res1 = feat_ext(data)
+    res1 = feat_ext(data, sample_rate)
     result = np.array(res1)
     # Dato generado con cambio de velocidad y tono
     new_data = stretch(data, 0.8)
     data_stretch_pitch = pitch(new_data, sample_rate, 0.7)
-    res3 = feat_ext(data_stretch_pitch)
+    res3 = feat_ext(data_stretch_pitch, sample_rate)
     result = np.vstack((result, res3))
     return result
 
