@@ -9,6 +9,9 @@ import threading as th
 ctk.set_appearance_mode("light")
 ctk.set_default_color_theme("green")
 
+def hash():
+    return os.urandom(2).hex()
+
 class AppWindow(ctk.CTk):
     def __init__(self):
         super().__init__()
@@ -17,11 +20,11 @@ class AppWindow(ctk.CTk):
         self.title_tarea_actual = "visitar a la abuela"
 
         self.title("Asistente de Tareas")
-        self.geometry("900x400+0+0")
+        self.geometry("400x400+0+0")
         self.resizable(False, False)
         self.update_idletasks()
         width = 400
-        height = 400
+        height = 500
         x = (self.winfo_screenwidth() - width) // 2
         y = (self.winfo_screenheight() - height) // 2
         self.geometry(f"{width}x{height}+{x+150}+{y}")
@@ -57,10 +60,10 @@ class AppWindow(ctk.CTk):
         self.button_microfono = tk.Button(self.microfono_frame, image=self.imagen_tk, command=self.escuchar, width=60, height=60)
         self.button_microfono.pack(pady=(20, 0))
 
-        # self.caja_texto = ctk.CTkEntry(self.microfono_frame, width=100, height=10)
-        # self.caja_texto.pack(pady=(10, 0))
-        # self.enter_button = ctk.CTkButton(self.microfono_frame, text="Enter", command=self.enter)
-        # self.enter_button.pack(pady=(10, 0))
+        self.caja_texto = ctk.CTkEntry(self.microfono_frame, width=100, height=10)
+        self.caja_texto.pack(pady=(10, 0))
+        self.enter_button = ctk.CTkButton(self.microfono_frame, text="Enter", command=self.enter)
+        self.enter_button.pack(pady=(10, 0))
 
         self.container.pack(expand=True, fill=tk.BOTH)
 
@@ -80,6 +83,8 @@ class AppWindow(ctk.CTk):
             "cancelar" : self.cancelar,
             "guardar tarea" : self.guardar_tarea,
             "reintentar" : self.reintentar,
+            "borrar tarea" : self.ver_tareas_borrar,
+            "confirmar" : self.confirmar,
         }
 
     def enter(self):
@@ -146,9 +151,14 @@ class AppWindow(ctk.CTk):
             self.caja_titulo.destroy()
         except:
             pass
+        try:
+           self.codigo_borrar.destroy()
+        except:
+            pass
         self.comando_ant = ""
         self.label_title.configure(text="Home")
         self.label_status.configure(text="Diga un Comando")
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
 
     def guardar_tarea(self):
         self.title_tarea_actual = self.caja_titulo.get()
@@ -157,7 +167,7 @@ class AppWindow(ctk.CTk):
         if self.title_tarea_actual == "":
             return
         cantTareas = len(os.listdir(f"./tareas/{self.tipo_tarea_actual}")) + 1
-        new_tarea = open(f"./tareas/{self.tipo_tarea_actual}/tarea{cantTareas}.txt", "w")
+        new_tarea = open(f"./tareas/{self.tipo_tarea_actual}/{self.tipo_tarea_actual[0:2]}{hash()}-{cantTareas}.txt", "w")
         new_tarea.write(self.title_tarea_actual)
         new_tarea.close()
         self.cancelar()
@@ -198,6 +208,43 @@ class AppWindow(ctk.CTk):
 
         self.tareas_frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
 
+    def ver_tareas_borrar(self):
+        self.label_status.configure(text="Ingrese el codigo para borrar y diga CONFIRMAR")
+        self.label_status.pack()
+        self.codigo_borrar = ctk.CTkEntry(self.main_frame, width=100, height=10)
+        self.codigo_borrar.pack()
+        self.tareas_frame = ctk.CTkFrame(self.main_frame, width=300, height=50)
+        scrollbar = tk.Scrollbar(self.tareas_frame, orient=tk.VERTICAL)
+        self.obj_list = tk.Listbox(self.tareas_frame, yscrollcommand=scrollbar.set)
+        scrollbar.config(command=self.obj_list.yview)
+        scrollbar.pack(side=tk.RIGHT, fill=tk.Y)
+        self.obj_list.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
+
+        self.obj_list.delete(0, tk.END)
+
+        for tipo in os.listdir(f"./tareas"):
+          for tarea in os.listdir(f"./tareas/{tipo}"):
+            cont_tarea = open(f"./tareas/{tipo}/{tarea}", "r")
+            self.obj_list.insert(tk.END, cont_tarea.read()+"  [codigo: "+tarea[:-4]+"]")
+            cont_tarea.close()
+        
+        self.tareas_frame.pack(expand=True, fill=tk.BOTH, pady=5, padx=5)
+
+    def confirmar(self):
+        codigo = self.codigo_borrar.get()
+        self.codigo_borrar.destroy()
+        self.comando_ant = ""
+        if codigo == "":
+            return
+        for tipo in os.listdir(f"./tareas"):
+          for tarea in os.listdir(f"./tareas/{tipo}"):
+            if codigo == tarea[:-4]:
+              os.remove(f"./tareas/{tipo}/{tarea}")
+              self.cancelar()
+              return
+        self.cancelar()
+        self.label_status.place(relx=0.5, rely=0.5, anchor=tk.CENTER)
+
     def predecir(self):
         # ejecutar modelo
         # path = "output.wav"
@@ -205,5 +252,7 @@ class AppWindow(ctk.CTk):
         return respuesta
 
 
-ventana = AppWindow()
-ventana.mainloop()
+
+if __name__ == "__main__":
+    ventana = AppWindow()
+    ventana.mainloop()
